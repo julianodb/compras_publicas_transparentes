@@ -8,6 +8,9 @@ verify_ssl = true
 [packages]
 
 django = "*"
+coverage = "*"
+pylint = "*"
+unittest-xml-reporting = "*"
 
 
 [dev-packages]
