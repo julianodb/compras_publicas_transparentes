@@ -87,6 +87,9 @@ class fake_response():
 
 class CompraPublicaModelTests(TestCase):
 
+    def setUp(self):
+        self.cp = CompraPublica('fakecode',fake_request)
+
     def test_exists(self):
         """Model CompraPublica exists, is installed and migrated."""
         pass
@@ -95,33 +98,101 @@ class CompraPublicaModelTests(TestCase):
         """CompraPublica object created with no arguments is empty"""
         self.assertIs(CompraPublica().name,"")
 
-    def test_correct_atribute_names(self):
-        """Test expected atributes names for CompraPublica api"""
-        cp = CompraPublica('fakecode',fake_request)
-        self.assertEqual(cp.code,"2097-241-SE14")
-        self.assertEqual(cp.name,"Insumos dentales especialidades")
-        self.assertEqual(cp.state_code,6)
-        self.assertEqual(cp.state,"Aceptada")
-        self.assertEqual(cp.tender_code,"2097-165-L113")
-        self.assertEqual(cp.description,"Insumos dentales especialidades DESDE 2097-165-L113\r\nDENTAL ESPECIALIDADES")
-        self.assertEqual(cp.type_code,"8")
-        self.assertEqual(cp.type,"SE")
-        self.assertEqual(cp.currency,"CLP")
-        self.assertEqual(cp.supplier_state_code,"4")
-        self.assertEqual(cp.supplier_state,"Aceptada")
-        self.assertEqual(cp.has_items,"1")
-        self.assertEqual(cp.classification_mean,3.9333333333333331)
-        self.assertEqual(cp.classification_n,6)
-        self.assertEqual(cp.discounts,0.0)
-        self.assertEqual(cp.charges,0.0)
-        self.assertEqual(cp.total_net,35000.0)
-        self.assertEqual(cp.iva,19.0)
-        self.assertEqual(cp.taxes,6650.0)
-        self.assertEqual(cp.total,41650.0)
-        self.assertEqual(cp.financing,"")
-        self.assertEqual(cp.country,"CL")
-        self.assertEqual(cp.delivery_type,"7")
-        self.assertEqual(cp.payment_type,"2")
+    def test_atribute_code(self):
+        """Test atribute code for CompraPublica api"""
+        self.assertEqual(self.cp.code,"2097-241-SE14")
+
+    def test_atribute_name(self):
+        """Test atribute name for CompraPublica api"""
+        self.assertEqual(self.cp.name,"Insumos dentales especialidades")
+
+    def test_atribute_state_code(self):
+        """Test atribute state_code for CompraPublica api"""
+        self.assertEqual(self.cp.state_code,6)
+
+    def test_atribute_state_name(self):
+        """Test atribute state_name for CompraPublica api"""
+        self.assertEqual(self.cp.state_name,"Aceptada")
+
+    def test_atribute_tender_code(self):
+        """Test atribute tender_code for CompraPublica api"""
+        self.assertEqual(self.cp.tender_code,"2097-165-L113")
+
+    def test_atribute_description(self):
+        """Test atribute description for CompraPublica api"""
+        self.assertEqual(self.cp.description,"Insumos dentales especialidades DESDE 2097-165-L113\r\nDENTAL ESPECIALIDADES")
+
+    def test_atribute_type_code(self):
+        """Test atribute type_code for CompraPublica api"""
+        self.assertEqual(self.cp.type_code,"8")
+
+    def test_atribute_type_name(self):
+        """Test atribute type_name for CompraPublica api"""
+        self.assertEqual(self.cp.type_name,"SE")
+
+    def test_atribute_currency(self):
+        """Test atribute currency for CompraPublica api"""
+        self.assertEqual(self.cp.currency,"CLP")
+
+    def test_atribute_supplier_state_code(self):
+        """Test atribute supplier_state_code for CompraPublica api"""
+        self.assertEqual(self.cp.supplier_state_code,4)
+
+    def test_atribute_supplier_state(self):
+        """Test atribute supplier_state for CompraPublica api"""
+        self.assertEqual(self.cp.supplier_state,"Aceptada")
+
+    def test_atribute_has_items(self):
+        """Test atribute has_items for CompraPublica api"""
+        self.assertEqual(self.cp.has_items,"1")
+
+    def test_atribute_classification_mean(self):
+        """Test atribute classification_mean for CompraPublica api"""
+        self.assertEqual(self.cp.classification_mean,3.9333333333333331)
+
+    def test_atribute_classification(self):
+        """Test atribute classification for CompraPublica api"""
+        self.assertEqual(self.cp.classification_n,6)
+
+    def test_atribute_discounts(self):
+        """Test atribute discounts for CompraPublica api"""
+        self.assertEqual(self.cp.discounts,0.0)
+
+    def test_atribute_charges(self):
+        """Test atribute charges for CompraPublica api"""
+        self.assertEqual(self.cp.charges,0.0)
+
+    def test_atribute_total_net(self):
+        """Test atribute total_net for CompraPublica api"""
+        self.assertEqual(self.cp.total_net,35000.0)
+
+    def test_atribute_iva(self):
+        """Test atribute iva for CompraPublica api"""
+        self.assertEqual(self.cp.iva,19.0)
+
+    def test_atribute_taxes(self):
+        """Test atribute taxes for CompraPublica api"""
+        self.assertEqual(self.cp.taxes,6650.0)
+
+    def test_atribute_total(self):
+        """Test atribute total for CompraPublica api"""
+        self.assertEqual(self.cp.total,41650.0)
+
+    def test_atribute_financing(self):
+        """Test atribute financing for CompraPublica api"""
+        self.assertEqual(self.cp.financing,"")
+
+    def test_atribute_country(self):
+        """Test atribute country for CompraPublica api"""
+        self.assertEqual(self.cp.country,"CL")
+
+    def test_atribute_delivery_type(self):
+        """Test atribute delivery_type for CompraPublica api"""
+        self.assertEqual(self.cp.delivery_type,"7")
+
+    def test_atribute_payment_type(self):
+        """Test atribute payment_type for CompraPublica api"""
+        self.assertEqual(self.cp.payment_type,"2")
 
 #    def test_was_published_recently_with_future_questions(self):
 #        """
