@@ -10,13 +10,9 @@ class IndexView(generic.ListView):
         """Return the last five published CompraPublica."""
         return None
 
-class DetailView(generic.DetailView):
-    model = CompraPublica
-    template_name = 'mercadopublico_api/detail.html'
-
-    def get_queryset(self):
-        """Fetches and displays the corresponding CompraPublica."""
-        return None
+def detail(request,code):
+    cp = CompraPublica(code)
+    return render(request, 'mercadopublico_api/detail.html',{'cp': cp})
 
 #class IndexView(generic.ListView):
 #    template_name = 'mercadopulbico_api/index.html'
