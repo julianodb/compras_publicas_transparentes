@@ -1,19 +1,18 @@
+"""Views for mercadopublico_api"""
 from django.shortcuts import render
 from django.views import generic
 from .models import CompraPublica
 
 class IndexView(generic.ListView):
     template_name = 'mercadopublico_api/index.html'
-#    context_object_name = 'latest_question_list'
 
     def get_queryset(self):
-        """Return the last five published CompraPublica."""
+        """Returnd the last five published CompraPublica."""
         return CompraPublica.get_last_five()
 
-def detail(request,code):
+def detail(request, code):
     cp = CompraPublica.create(code)
-    return render(request, 'mercadopublico_api/detail.html',{'cp': cp})
-
+    return render(request, 'mercadopublico_api/detail.html', {'cp': cp})
 #class IndexView(generic.ListView):
 #    template_name = 'mercadopulbico_api/index.html'
 #    context_object_name = 'latest_question_list'
@@ -36,4 +35,3 @@ def detail(request,code):
 #        Excludes any questions that aren't published yet.
 #        """
 #        return Question.objects.filter(pub_date__lte=timezone.now())
-
