@@ -8,7 +8,7 @@ class IndexView(generic.ListView):
 
     def get_queryset(self):
         """Return the last five published CompraPublica."""
-        return None
+        return CompraPublica.get_last_five()
 
 def detail(request,code):
     cp = CompraPublica(code)

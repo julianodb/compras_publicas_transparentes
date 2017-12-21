@@ -68,6 +68,13 @@ class CompraPublica(models.Model):
         self.delivery_type = response['Listado'][0]['TipoDespacho']
         self.payment_type = response['Listado'][0]['FormaPago']
 
+    @classmethod
+    def get_last_five(cls,request_method=requests):
+        req_url = 'http://api.mercadopublico.cl/servicios/v1/publico/ordenesdecompra.json?estado=todos&ticket=34EA724F-17C8-462E-B23B-4A92B3A2F622'
+        response = request_method.get(req_url).json()
+        #return [CompraPublica(x['Codigo']) for x in response['Listado'][:1]]
+        return response['Listado'][:5]
+
 #    pub_date = models.DateTimeField('date published')
 #
 #    def was_published_recently(self):
