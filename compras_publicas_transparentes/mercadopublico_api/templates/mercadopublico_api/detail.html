@@ -1,1 +1,10 @@
-{{ compraPublica }}
+{% if cp %}
+
+<p>Compra Pública: {{ cp.code }}</p>
+<p>Nombre: {{ cp.name }}</p>
+<p>Estado: {{ cp.state_name }}</p>
+<p>Descripción: {{ cp.description }}</p>
+<p>Valor Bruto: ${{ cp.total_net }}</p>
+
+{% endif %}
+
