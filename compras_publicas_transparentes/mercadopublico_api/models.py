@@ -1,4 +1,4 @@
-"""CompraPublica model"""
+"""CompraPublica model based on mercadopublico api response"""
 from django.db import models
 import requests
 
@@ -82,13 +82,15 @@ class CompraPublica(models.Model):
                                     choices=PAYMENT_TYPE_CHOICES)
 
     @classmethod
-    def create(cls, code=None, request_method=requests):
+    def create(cls, code=None, request_class_or_module=requests):
         """Creates a new CompraPublica with the given code
 
         If an entry with the given code is not found in the database,
         this method requests from the mercadopublico api.
         If no code is given, an empty object is created.
-        Accepts a request_method for mocking the request to the api
+        Accepts a request_class_or_module for mocking the request to 
+        the api (should have same functionality as module requests, 
+        specifically the get() method)
         """
         if not code:
             return cls()
@@ -100,10 +102,10 @@ class CompraPublica(models.Model):
             req_url = ('http://api.mercadopublico.cl/servicios/v1/publico/'
                        'ordenesdecompra.json?codigo={c}&ticket={t}')
             req_url = req_url.format(c=code, t=ticket)
-            response = request_method.get(req_url).json()
+            response = request_class_or_module.get(req_url).json()
             for _ in range(5):
                 while 'Codigo' in response:
-                    response = request_method.get(req_url).json()
+                    response = request_class_or_module.get(req_url).json()
             new_object.code = response['Listado'][0]['Codigo']
             new_object.name = response['Listado'][0]['Nombre']
             new_object.state_code = response['Listado'][0]['CodigoEstado']
@@ -132,18 +134,18 @@ class CompraPublica(models.Model):
             return new_object
 
     @classmethod
-    def get_last_five(cls, request_method=requests):
+    def get_last_five(cls, request_class_or_module=requests):
         """Returns list with last five CompraPublica found today
 
         The order of the objects is umpredictable, so it may change
         even if there is no new entry.
-        Also accepts a request_method for mocking.        
+        Also accepts a request_class_or_module for mocking.        
         """
         ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
         req_url = ('http://api.mercadopublico.cl/servicios/v1/publico/orde'
                    'nesdecompra.json?estado=todos&ticket={t}')
         req_url = req_url.format(t=ticket)
-        response = request_method.get(req_url).json()
+        response = request_class_or_module.get(req_url).json()
         result = []
         for candidate in response['Listado'][:5]:
             result.append(CompraPublica.create(candidate['Codigo']))
