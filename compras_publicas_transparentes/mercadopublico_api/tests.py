@@ -3,7 +3,7 @@ from django.test import TestCase
 from .models import CompraPublica
 
 class fake_request():
-    def get(code):
+    def get(url):
         return fake_response()
 
 class fake_response():
@@ -16,7 +16,8 @@ class fake_response():
                 "CodigoEstado":6,
                 "Estado":"Aceptada",
                 "CodigoLicitacion":"2097-165-L113",
-                "Descripcion":"Insumos dentales especialidades DESDE 2097-165-L113\r\nDENTAL ESPECIALIDADES",
+                "Descripcion": ("Insumos dentales especialidades DESDE 209"
+                                "7-165-L113\r\nDENTAL ESPECIALIDADES"),
                 "CodigoTipo":"8",
                 "Tipo":"SE",
                 "TipoMoneda":"CLP",
@@ -56,7 +57,8 @@ class fake_response():
                     "MailContacto":"maldonadoyohana1@gmail.com"},
                 "Proveedor":{"Codigo":"1316979",
                     "Nombre":"COMERCIALIZADORA ILHABELLA EIRL",
-                    "Actividad":"VENTA AL POR MAYOR DE OTROS PRODUCTOS N.C.P.| VENT",
+                    "Actividad":("VENTA AL POR MAYOR DE OTROS PRODUCTOS N."
+                                 "C.P.| VENT"),
                     "CodigoSucursal":"717107",
                     "NombreSucursal":"COMERCIALIZADORA ILHABELLA EIRL",
                     "RutSucursal":"76.242.192-5",
@@ -84,6 +86,38 @@ class fake_response():
                         "TotalDescuentos":0.0,
                         "TotalImpuestos":0.0,
                         "Total":35000.0}]}}]}
+
+class fake_request_all():
+    def get(url):
+        return fake_response_all()
+
+class fake_response_all():
+    def json(self):
+        return {'Cantidad': 6,
+                'Version': 'v1',
+                'FechaCreacion': '2017-12-21T00:37:06.397',
+                'Listado': [
+                    {'CodigoEstado': 4,
+                    'Codigo': '1816-1026-CM17',
+                    'Nombre': 'CARNES'},
+                    {'CodigoEstado': 4,
+                    'Codigo': '1816-1028-CM17',
+                    'Nombre': 'CARNES'},
+                    {'CodigoEstado': 9,
+                    'Codigo': '3265-837-SE17',
+                    'Nombre': ('Adquisición de Cajas - Dirección de Transi'
+                               'to')},
+                    {'CodigoEstado': 5,
+                    'Codigo': '4686-1709-SE17',
+                    'Nombre': 'DESRATIZACION Y DESINFECCION'},
+                    {'CodigoEstado': 4,
+                    'Codigo': '5857-43-SE17',
+                    'Nombre': ('Servicio de impresión recetarios Adultos ma'
+                               'yores')},
+                    {'CodigoEstado': 6,
+                    'Codigo': '617807-7419-SE17',
+                    'Nombre': 'HOSLA COMPRA DE SERVICIOS PROFESIONALES'}]}
+
 
 class CompraPublicaModelTests(TestCase):
 
@@ -193,6 +227,29 @@ class CompraPublicaModelTests(TestCase):
     def test_atribute_payment_type(self):
         """Test atribute payment_type for CompraPublica api"""
         self.assertEqual(self.cp.payment_type,"2")
+
+    def test_last_five(self):
+        """Last_five method parses CompraPublica api reponse correctly"""
+        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[0],
+                         {'CodigoEstado': 4,
+                         'Codigo': '1816-1026-CM17',
+                         'Nombre': 'CARNES'}) 
+        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[1],
+                        {'CodigoEstado': 4,
+                         'Codigo': '1816-1028-CM17',
+                         'Nombre': 'CARNES'})
+        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[2],
+                        {'CodigoEstado': 9,
+                         'Codigo': '3265-837-SE17',
+                         'Nombre': 'Adquisición de Cajas - Dirección de Transito'})
+        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[3],
+                        {'CodigoEstado': 5,
+                         'Codigo': '4686-1709-SE17',
+                         'Nombre': 'DESRATIZACION Y DESINFECCION'})
+        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[4],
+                        {'CodigoEstado': 4,
+                         'Codigo': '5857-43-SE17',
+                         'Nombre': 'Servicio de impresión recetarios Adultos mayores'})
 
 #    def test_was_published_recently_with_future_questions(self):
 #        """
