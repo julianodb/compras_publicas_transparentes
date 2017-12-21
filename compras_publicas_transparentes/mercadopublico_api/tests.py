@@ -2,6 +2,11 @@ from django.test import TestCase
 
 from .models import CompraPublica
 
+#TODO: FIX: test_last_five still relies on api connection
+
+#{'Codigo': 10500,
+ #'Mensaje': 'Lo sentimos. Hemos detectado que existen peticiones simultáneas.'}
+
 class fake_request():
     def get(url):
         return fake_response()
@@ -122,7 +127,7 @@ class fake_response_all():
 class CompraPublicaModelTests(TestCase):
 
     def setUp(self):
-        self.cp = CompraPublica('fakecode',fake_request)
+        self.cp = CompraPublica.create('fakecode',fake_request)
 
     def test_exists(self):
         """Model CompraPublica exists, is installed and migrated."""
@@ -230,33 +235,186 @@ class CompraPublicaModelTests(TestCase):
 
     def test_last_five(self):
         """Last_five method parses CompraPublica api reponse correctly"""
-        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[0],
-                         {'CodigoEstado': 4,
-                         'Codigo': '1816-1026-CM17',
-                         'Nombre': 'CARNES'}) 
-        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[1],
-                        {'CodigoEstado': 4,
-                         'Codigo': '1816-1028-CM17',
-                         'Nombre': 'CARNES'})
-        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[2],
-                        {'CodigoEstado': 9,
-                         'Codigo': '3265-837-SE17',
-                         'Nombre': 'Adquisición de Cajas - Dirección de Transito'})
-        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[3],
-                        {'CodigoEstado': 5,
-                         'Codigo': '4686-1709-SE17',
-                         'Nombre': 'DESRATIZACION Y DESINFECCION'})
-        self.assertEqual(CompraPublica.get_last_five(fake_request_all)[4],
-                        {'CodigoEstado': 4,
-                         'Codigo': '5857-43-SE17',
-                         'Nombre': 'Servicio de impresión recetarios Adultos mayores'})
+        CompraPublica(supplier_state='Nueva orden de compra',
+              charges=0.0,
+              payment_type='2',
+              delivery_type='7',
+              name='CARNES',
+              taxes=68360.0,
+              type_code='9',
+              id=19,
+              country='CL',
+              classification_mean=4.8,
+              supplier_state_code='1',
+              type_name='CM',
+              discounts=0.0,
+              iva=19.0,
+              code='1816-1026-CM17',
+              total_net=359790.0,
+              description=('Cubre el 27 y 28 de Diciembre\r\nPosta cubito '
+                           '13 kilos\r\nPosta Juliana 12 kilos\r\nSobrecos'
+                           'tilla 170 trozos de 200 grs.\r\nTrutro corto 1'
+                           '70 unidades de 220 grs.\r\nCDP 01'),
+              total=428150.0,
+              financing='',
+              state_code=4,
+              has_items='1',
+              state_name='Enviada a proveedor',
+              tender_code=None,
+              classification_n=5,
+              currency='CLP').save()
+        
+        CompraPublica(supplier_state='Nueva orden de compra',
+              charges=0.0,
+              payment_type='2',
+              delivery_type='7',
+              name='CARNES',
+              taxes=49466.0,
+              type_code='9',
+              id=20,
+              country='CL',
+              classification_mean=2.0,
+              supplier_state_code=1,
+              type_name='CM',
+              discounts=8052.0,
+              iva=19.0,
+              code='1816-1028-CM17',
+              total_net=268400.0,
+              description='Cubre del 29 de Diciembre al 02 de Enero\r\nCDP 01',
+              total=309814.0,
+              state_code=4,
+              financing='',
+              has_items='1',
+              state_name='Enviada a proveedor',
+              tender_code=None,
+              classification_n=1,
+              currency='CLP').save()
 
-#    def test_was_published_recently_with_future_questions(self):
-#        """
-#        was_published_recently() returns False for questions whose pub_date
-#        is in the future.
-#        """
-#        time = timezone.now() + datetime.timedelta(days=30)
-#        future_question = Question(pub_date=time)
-#        self.assertIs(future_question.was_published_recently(), False)
+        CompraPublica(supplier_state='Cancelada',
+              charges=0.0,
+              payment_type='2',
+              delivery_type='7',
+              name='Adquisición de Cajas - Dirección de Transito',
+              taxes=5282.0,
+              type_code='8',
+              id=21,
+              country='CL',
+              classification_mean=3.442857142857143,
+              supplier_state_code=5,
+              type_name='SE',
+              discounts=0.0,
+              iva=19.0,
+              code='3265-837-SE17',
+              total_net=27800.0,
+              description=('Compra de Materiales de Oficina 2017  DESDE 32'
+                           '65-5-LE17. \r\nAdquisición de Cajas para Archi'
+                           'vos que serán Utilizados para el Almacenamient'
+                           'o de los Permisos de Circulación de Años Anter'
+                           'iores  en Bodega.\r\nSegún Formulario Solicitu'
+                           'd de Compra N°0841 Dirección de Transito'),
+              total=33082.0,
+              state_code=9,
+              financing='',
+              has_items='1',
+              state_name='Cancelada',
+              tender_code='3265-5-LE17',
+              classification_n=14,
+              currency='CLP').save()
 
+        CompraPublica(supplier_state='En proceso',
+              charges=0.0,
+              payment_type='2',
+              delivery_type='7',
+              name='DESRATIZACION Y DESINFECCION',
+              taxes=119121.0,
+              type_code='8',
+              id=22,
+              country='CL',
+              classification_mean=0.0,
+              supplier_state_code=2,
+              type_name='SE',
+              discounts=0.0,
+              iva=19.0,
+              code='4686-1709-SE17',
+              total_net=626951.0,
+              description=('DESRATIZACION Y DESINFECCION DEL EDIFICIO CONG'
+                           'RESO NACIONAL SEDE SANTIAGO Y CAMARA DE DIPUTA'
+                           'DOS EN VALPARAISO, SOLICITADO POR DIRECCION DE'
+                           'ADMINISTRACION, SEGUN RESOLUCION N° 672-2017'),
+              total=746072.0,
+              state_code=5,
+              financing='',
+              has_items='1',
+              state_name='En proceso',
+              tender_code=None,
+              classification_n=0,
+              currency='CLP').save()
+
+        CompraPublica(supplier_state='Nueva orden de compra',
+              charges=0.0,
+              payment_type='2',
+              delivery_type='12',
+              name='Servicio de impresión recetarios Adultos mayores',
+              taxes=47880.0,
+              type_code='8',
+              id=23,
+              country='CL',
+              classification_mean=5.0,
+              supplier_state_code=1,
+              type_name='SE',
+              discounts=0.0,
+              iva=19.0,
+              code='5857-43-SE17',
+              total_net=252000.0,
+              description=('Servicio de impresión recetarios Adultos mayor'
+                           'es\r\nd.a. 981 donde aprueba convenio promocio'
+                           'n de salud \r\nd.a. compra 1602 de fecha 18.02'
+                           '.2017'),
+              total=299880.0,
+              state_code=4,
+              financing='',
+              has_items='1',
+              state_name='Enviada a proveedor',
+              tender_code=None,
+              classification_n=2,
+              currency='CLP').save()
+        last_five = CompraPublica.get_last_five(fake_request_all)
+        self.assertEqual(last_five[0].code,'1816-1026-CM17')
+        self.assertEqual(last_five[1].code,'1816-1028-CM17')
+        self.assertEqual(last_five[2].code,'3265-837-SE17')
+        self.assertEqual(last_five[3].code,'4686-1709-SE17')
+        self.assertEqual(last_five[4].code,'5857-43-SE17')
+
+    def test_null_tender_code(self):
+        """Model accepts None value for tender_code"""
+        CompraPublica(supplier_state='Nueva orden de compra',
+            charges=0.0,
+            payment_type='2',
+            delivery_type='7',
+            name='ADQUISICION DE EQUIPAMIENTO DE OFICINA',
+            taxes=87843.0,
+            type_code='9',
+            id=4,
+            country='CL',
+            classification_mean=3.9301204819277107,
+            supplier_state_code='1',
+            type_name='CM',
+            discounts=9435.0,
+            iva=19.0,
+            code='1001546-31-CM17',
+            total_net=471768.0,
+            description=('Ítem 29.05.001\r\nFacturar a nombre: Primer Trib'
+                         'unal Ambiental con asiento en Antofagasta. Rut N'
+                         '°61.999.230-K \r\nDirección: Avda. Jose Miguel C'
+                         'arrera N°1579, Antofagasta. \r\nHorario de entre'
+                         'ga: Lunes a Jueves 08:30-18:00 hrs. y Viernes 08'
+                         ':30-14:30 hrs.\r\n'),
+            total=550176.0,
+            state_code=4,
+            financing='',
+            has_items='1',
+            state_name='Enviada a proveedor',
+            tender_code=None,
+            classification_n=83,
+            currency='CLP').save()
+        self.assertIs(CompraPublica.create('1001546-31-CM17').tender_code,None)

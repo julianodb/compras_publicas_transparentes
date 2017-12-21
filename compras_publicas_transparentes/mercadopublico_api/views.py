@@ -11,7 +11,7 @@ class IndexView(generic.ListView):
         return CompraPublica.get_last_five()
 
 def detail(request,code):
-    cp = CompraPublica(code)
+    cp = CompraPublica.create(code)
     return render(request, 'mercadopublico_api/detail.html',{'cp': cp})
 
 #class IndexView(generic.ListView):
