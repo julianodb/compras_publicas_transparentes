@@ -2,8 +2,11 @@
 from django.db import models
 import requests
 
+ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
+
 class CompraPublica(models.Model):
     STATE_CODE_CHOICES = ((4, "Enviada a Proveedor"),
+                          (5, "En proceso"),
                           (6, "Aceptada"),
                           (9, "Cancelada"),
                           (12, "Recepción Conforme"),
@@ -98,11 +101,12 @@ class CompraPublica(models.Model):
             return cls.objects.get(code=code)
         except cls.DoesNotExist:
             new_object = cls()
-            ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
             req_url = ('http://api.mercadopublico.cl/servicios/v1/publico/'
                        'ordenesdecompra.json?codigo={c}&ticket={t}')
             req_url = req_url.format(c=code, t=ticket)
             response = request_class_or_module.get(req_url).json()
+            #print(response)
+            #TODO:improve retry method
             for _ in range(5):
                 while 'Codigo' in response:
                     response = request_class_or_module.get(req_url).json()
@@ -137,11 +141,10 @@ class CompraPublica(models.Model):
     def get_last_five(cls, request_class_or_module=requests):
         """Returns list with last five CompraPublica found today
 
-        The order of the objects is umpredictable, so it may change
+        The order of the objects is unpredictable, so it may change
         even if there is no new entry.
         Also accepts a request_class_or_module for mocking.        
         """
-        ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
         req_url = ('http://api.mercadopublico.cl/servicios/v1/publico/orde'
                    'nesdecompra.json?estado=todos&ticket={t}')
         req_url = req_url.format(t=ticket)

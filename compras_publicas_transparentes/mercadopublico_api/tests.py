@@ -9,7 +9,7 @@ from .models import CompraPublica
 class FakeRequest():
     """imitates requests module functionality for mocking
 
-    Implements the get() method, which returns a FakeResponse object, which
+    Implements the get() method, which returns a FakeResponse object, and
     has a json() method.
     """
     @classmethod
@@ -19,7 +19,7 @@ class FakeRequest():
 class FakeResponse():
     """imitates requests.get() response for mocking
 
-    Provides with a hard-coded example extracted from mercadopublico api
+    Provides a hard-coded example extracted from mercadopublico api
     """
     def json(self):
         return {
@@ -120,7 +120,7 @@ class FakeRequestAll():
     """imitates requests module functionality for lists petitions
     
     Implements the get() method, which returns a FakeResponseAll object, 
-    which has a json() method.
+    and has a json() method.
     """
     @classmethod
     def get(cls, url):
