@@ -1,7 +1,7 @@
 """Unittest module for mercadopublico_api"""
 from django.test import TestCase
 
-from .models import CompraPublica
+from .models import CompraPublica, APIResponse
 
 #TODO: handle when response is: {'Codigo': 10500,
  #'Mensaje': 'Lo sentimos. Hemos detectado que existen peticiones simultáneas.'}
@@ -12,8 +12,10 @@ class FakeRequest():
     Implements the get() method, which returns a FakeResponse object, and
     has a json() method.
     """
+    called_url = ''
     @classmethod
     def get(cls, url):
+        cls.called_url = url
         return FakeResponse()
 
 class FakeResponse():
@@ -116,17 +118,17 @@ class FakeResponse():
                         "TotalImpuestos":0.0,
                         "Total":35000.0}]}}]}
 
-class FakeRequestAll():
+class FakeRequestList():
     """imitates requests module functionality for lists petitions
     
-    Implements the get() method, which returns a FakeResponseAll object, 
+    Implements the get() method, which returns a FakeResponseList object, 
     and has a json() method.
     """
     @classmethod
     def get(cls, url):
-        return FakeResponseAll()
+        return FakeResponseList()
 
-class FakeResponseAll():
+class FakeResponseList():
     """imitates requests.get() response for lists petitions
 
     Provides with a hard-coded example extracted from mercadopublico api
@@ -157,6 +159,49 @@ class FakeResponseAll():
                              'Codigo': '617807-7419-SE17',
                              'Nombre': ('HOSLA COMPRA DE SERVICIOS PROFESI'
                                         'ONALES')}]}
+
+
+class APIResponseModelTests(TestCase):
+    """APIResponse Model unit tests"""
+    def test_create_no_arguments(self):
+        """Trying to create APIResponse with no arguments raises error"""
+        with self.assertRaises(TypeError):
+            APIResponse.create()
+
+    def test_create_missing_is_list(self):
+        """Calling APIResponse.create without is_list raises error"""
+        with self.assertRaises(TypeError):
+            APIResponse.create(is_licitacion=True)
+
+    def test_create_missing_is_licitacion(self):
+        """Calling APIResponse.create without is_licitacion raises error"""
+        with self.assertRaises(TypeError):
+            APIResponse.create(is_list=True)
+
+    def test_create_missing_code(self):
+        """Calling APIResponse.create without code raises error"""
+        with self.assertRaises(TypeError):
+            APIResponse.create(is_licitacion=True, is_list=False)
+
+    def test_create_missing_date(self):
+        """Calling APIResponse.create without date raises error"""
+        with self.assertRaises(TypeError):
+            APIResponse.create(is_licitacion=True, is_list=True)
+
+    def test_create_licitacion(self):
+        """APIResponse.create happy path for licitacion""" 
+        apiresp = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=True,
+                           is_list=False,
+                           code='CODE')
+        self.assertTrue(
+            FakeRequest.called_url.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
+                 "ciones.json?codigo=CODE")))
+        self.assertTrue(
+            apiresp.request.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
+                 "ciones.json?codigo=CODE")))
 
 
 class CompraPublicaModelTests(TestCase):
@@ -418,7 +463,7 @@ class CompraPublicaModelTests(TestCase):
             tender_code=None,
             classification_n=2,
             currency='CLP').save()
-        last_five = CompraPublica.get_last_five(FakeRequestAll)
+        last_five = CompraPublica.get_last_five(FakeRequestList)
         self.assertEqual(last_five[0].code, '1816-1026-CM17')
         self.assertEqual(last_five[1].code, '1816-1028-CM17')
         self.assertEqual(last_five[2].code, '3265-837-SE17')

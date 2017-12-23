@@ -1,8 +1,60 @@
 """CompraPublica model based on mercadopublico api response"""
 from django.db import models
+from django.utils import timezone
 import requests
 
 ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
+
+class APIResponse(models.Model):
+    """Represents the json response from the API"""
+    code = models.CharField(max_length=50, blank=True)
+    is_licitacion = models.BooleanField()
+    is_list = models.BooleanField()
+    request = models.CharField(max_length=200)
+    response = models.TextField()
+    date_ini = models.DateTimeField(auto_now_add=True)
+    date_fin = models.DateTimeField(default=timezone.now)
+
+    @classmethod
+    def create(cls, request_class_or_module=requests, **kwargs):
+        """Creates a new APIResponse if the response has changes
+
+        Two kinds of arguments are accepted:
+        either {is_licitacion, is_list=False, code} or
+        {is_licitacion, is_list=True, date}
+        Also accepts a request_class_or_module for mocking
+        """
+        if 'is_licitacion' not in kwargs:
+            raise TypeError('expected is_licitacion (bool) argument')
+        if 'is_list' not in kwargs:
+            raise TypeError('expected is_list (bool) argument')
+        if kwargs['is_list']==False and 'code' not in kwargs:
+            raise TypeError('expected code (str) argument')
+        if kwargs['is_list']==True and 'date' not in kwargs:
+            raise TypeError('expected date (datetime) argument')
+        req_url = 'http://api.mercadopublico.cl/servicios/v1/publico/'
+        if kwargs['is_licitacion']:
+            req_url += 'licitaciones.json'
+        else:
+            req_url += 'ordenesdecompra.json'
+        if kwargs['is_list']:
+            req_url += '?fecha={}'
+        else:
+            req_url += '?codigo={}'.format(kwargs['code'])
+        req_url += '&ticket={}'.format(ticket)
+        response = request_class_or_module.get(req_url)
+       # try:
+       #     return cls.objects.get(*args, **kwargs)
+       # except cls.DoesNotExist:
+       #     new_object = cls()
+       #                'ordenesdecompra.json?codigo={c}&ticket={t}')
+       #     req_url = req_url.format(c=code, t=ticket)
+       #     response = request_class_or_module.get(req_url).json()
+       #     #print(response)
+       #     #TODO:improve retry method
+       #     for _ in range(5):
+       #         while 'Codigo' in response:
+       #             response = request_class_or_module.get(req_url).json()
 
 class CompraPublica(models.Model):
     STATE_CODE_CHOICES = ((4, "Enviada a Proveedor"),
