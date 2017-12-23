@@ -12,6 +12,7 @@ coverage = "*"
 pylint = "*"
 unittest-xml-reporting = "*"
 mysqlclient = "*"
+requests = "*"
 
 
 [dev-packages]

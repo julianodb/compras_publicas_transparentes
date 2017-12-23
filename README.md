@@ -15,7 +15,6 @@ from django.utils.crypto import get_random_string
 chars = 'abcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*(-_=+)'
 print(get_random_string(50, chars))
 ```
-
 ## Database setting
 
 The following environmental variables define the database settings required by django:
