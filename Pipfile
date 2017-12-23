@@ -11,6 +11,7 @@ django = "*"
 coverage = "*"
 pylint = "*"
 unittest-xml-reporting = "*"
+mysqlclient = "*"
 
 
 [dev-packages]
