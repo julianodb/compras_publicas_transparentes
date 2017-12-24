@@ -190,7 +190,7 @@ class APIResponseModelTests(TestCase):
 
     def test_create_licitacion(self):
         """APIResponse.create happy path for licitacion""" 
-        apiresp = APIResponse.create(request_class_or_module=FakeRequest,
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
                            is_licitacion=True,
                            is_list=False,
                            code='CODE')
@@ -202,6 +202,24 @@ class APIResponseModelTests(TestCase):
             apiresp.request.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
                  "ciones.json?codigo=CODE")))
+        self.assertEquals(apiresp.response, FakeResponse().json())
+        self.assertIs(apiresp.is_licitacion, True)
+        self.assertIs(apiresp.is_list, False)
+
+    def test_create_licitacion_twice(self):
+        """APIResponse.create returns old object if response is the same""" 
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=True,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, True)
+        apiresp2, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=True,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, False)
+        self.assertEquals(apiresp, apiresp2)
+        self.assertEquals(APIResponse.objects.count(), 1)
 
 
 class CompraPublicaModelTests(TestCase):

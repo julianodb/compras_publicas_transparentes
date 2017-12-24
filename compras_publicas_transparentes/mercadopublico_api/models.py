@@ -42,7 +42,20 @@ class APIResponse(models.Model):
         else:
             req_url += '?codigo={}'.format(kwargs['code'])
         req_url += '&ticket={}'.format(ticket)
-        response = request_class_or_module.get(req_url)
+        response = request_class_or_module.get(req_url).json()
+        #TODO:improve retry method
+        for _ in range(5):
+            while 'Codigo' in response:
+                response = request_class_or_module.get(req_url).json()
+        return cls.objects.get_or_create(kwargs,
+                                         request=req_url,
+                                         response=response)
+
+    def __str__(self):
+        #for key, value in vars(self).items():
+            #if not key.startswith('_'):
+                #result += '{}={!r},'.format(key, value)
+        return('<APIResponse {!r}>'.format(vars(self)))
        # try:
        #     return cls.objects.get(*args, **kwargs)
        # except cls.DoesNotExist:
