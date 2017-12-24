@@ -3,6 +3,8 @@ from django.test import TestCase
 
 from .models import CompraPublica, APIResponse
 
+from contextlib import contextmanager
+
 #TODO: handle when response is: {'Codigo': 10500,
  #'Mensaje': 'Lo sentimos. Hemos detectado que existen peticiones simultáneas.'}
 
@@ -12,17 +14,33 @@ class FakeRequest():
     Implements the get() method, which returns a FakeResponse object, and
     has a json() method.
     """
+    alt_response=False
     called_url = ''
     @classmethod
     def get(cls, url):
         cls.called_url = url
-        return FakeResponse()
+        return FakeResponse(cls.alt_response)
+
+    @classmethod
+    @contextmanager
+    def change_response(cls):
+        cls.alt_response = True
+        try:
+            yield
+        finally:
+            cls.alt_response = False
 
 class FakeResponse():
     """imitates requests.get() response for mocking
 
     Provides a hard-coded example extracted from mercadopublico api
     """
+    def __init__(self, change_response=False):
+        if change_response:
+            self.codigo_estado = 5
+        else:
+            self.codigo_estado = 6
+        
     def json(self):
         return {
             "Cantidad":1,
@@ -31,7 +49,7 @@ class FakeResponse():
             "Listado":[{
                 "Codigo":"2097-241-SE14",
                 "Nombre":"Insumos dentales especialidades",
-                "CodigoEstado":6,
+                "CodigoEstado":self.codigo_estado,
                 "Estado":"Aceptada",
                 "CodigoLicitacion":"2097-165-L113",
                 "Descripcion": (
@@ -220,6 +238,71 @@ class APIResponseModelTests(TestCase):
         self.assertIs(n, False)
         self.assertEquals(apiresp, apiresp2)
         self.assertEquals(APIResponse.objects.count(), 1)
+
+    def test_create_licitacion_different(self):
+        """APIResponse.create returns new object if response is different""" 
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=True,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, True)
+        with FakeRequest.change_response():
+            apiresp2, n = APIResponse.create(
+                request_class_or_module=FakeRequest,
+                is_licitacion=True,
+                is_list=False,
+                code='CODE')
+            self.assertIs(n, True)
+            self.assertEquals(APIResponse.objects.count(), 2)
+
+    def test_create_orden_compra(self):
+        """APIResponse.create happy path for orden_compra""" 
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=False,
+                           is_list=False,
+                           code='CODE')
+        self.assertTrue(
+            FakeRequest.called_url.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
+                 "sdecompra.json?codigo=CODE")))
+        self.assertTrue(
+            apiresp.request.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
+                 "sdecompra.json?codigo=CODE")))
+        self.assertEquals(apiresp.response, FakeResponse().json())
+        self.assertIs(apiresp.is_licitacion, False)
+        self.assertIs(apiresp.is_list, False)
+
+    def test_create_orden_compra_equal(self):
+        """APIResponse.create returns old object if response is the same""" 
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=False,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, True)
+        apiresp2, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=False,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, False)
+        self.assertEquals(apiresp, apiresp2)
+        self.assertEquals(APIResponse.objects.count(), 1)
+
+    def test_create_orden_compra_different(self):
+        """APIResponse.create returns new object if response is different""" 
+        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
+                           is_licitacion=False,
+                           is_list=False,
+                           code='CODE')
+        self.assertIs(n, True)
+        with FakeRequest.change_response():
+            apiresp2, n = APIResponse.create(
+                request_class_or_module=FakeRequest,
+                is_licitacion=False,
+                is_list=False,
+                code='CODE')
+            self.assertIs(n, True)
+            self.assertEquals(APIResponse.objects.count(), 2)
 
 
 class CompraPublicaModelTests(TestCase):
