@@ -18,6 +18,9 @@ class APIList(models.Model):
     date_ini = models.DateTimeField(auto_now_add=True)
     date_fin = models.DateTimeField(default=timezone.now)
 
+    class Meta:
+        unique_together = (("date", "is_licitacion", "response"),)
+
     @classmethod
     def create(cls, is_licitacion, date, request_class_or_module=requests):
         """Creates a new APIList if the response changed
@@ -37,9 +40,13 @@ class APIList(models.Model):
         for _ in range(5):
             while 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
-        return cls.objects.get_or_create(is_licitacion=is_licitacion,
-                                         date=date,
-                                         response=response)
+        obj, new = cls.objects.update_or_create(is_licitacion=is_licitacion,
+                                                date=date,
+                                                response=response,
+                                                defaults={
+                                                    'date_fin':timezone.now()
+                                                    })
+        return obj, new
 
     def __str__(self):
         return('<APIList {!r}>'.format(vars(self)))
@@ -51,6 +58,9 @@ class APIItem(models.Model):
     response = models.TextField()
     date_ini = models.DateTimeField(auto_now_add=True)
     date_fin = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        unique_together = (("code", "is_licitacion", "response"),)
 
     @classmethod
     def create(cls, is_licitacion, code, request_class_or_module=requests):
