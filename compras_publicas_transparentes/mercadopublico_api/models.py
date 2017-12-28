@@ -2,53 +2,51 @@
 from django.db import models
 from django.utils import timezone
 import requests
+from itertools import cycle
 
 ticket = '34EA724F-17C8-462E-B23B-4A92B3A2F622'
+ticket_b = cycle([
+    'a',
+    'b',
+    ])
+max_retries = 5
 
-class APIResponse(models.Model):
+class APIList(models.Model):
+    date = models.DateTimeField()
+    is_licitacion = models.BooleanField()
+    response = models.TextField()
+    date_ini = models.DateTimeField(auto_now_add=True)
+    date_fin = models.DateTimeField(default=timezone.now)
+
+class APIItem(models.Model):
     """Represents the json response from the API"""
     code = models.CharField(max_length=50, blank=True)
     is_licitacion = models.BooleanField()
-    is_list = models.BooleanField()
-    request = models.CharField(max_length=200)
     response = models.TextField()
     date_ini = models.DateTimeField(auto_now_add=True)
     date_fin = models.DateTimeField(default=timezone.now)
 
     @classmethod
-    def create(cls, request_class_or_module=requests, **kwargs):
-        """Creates a new APIResponse if the response has changes
+    def create(cls, is_licitacion, code, request_class_or_module=requests):
+        """Creates a new APIItem if the response changed
 
-        Two kinds of arguments are accepted:
-        either {is_licitacion, is_list=False, code} or
-        {is_licitacion, is_list=True, date}
-        Also accepts a request_class_or_module for mocking
+        is_licitacion: licitacion or Orden de Compra
+        Accepts a request_class_or_module for mocking
         """
-        if 'is_licitacion' not in kwargs:
-            raise TypeError('expected is_licitacion (bool) argument')
-        if 'is_list' not in kwargs:
-            raise TypeError('expected is_list (bool) argument')
-        if kwargs['is_list']==False and 'code' not in kwargs:
-            raise TypeError('expected code (str) argument')
-        if kwargs['is_list']==True and 'date' not in kwargs:
-            raise TypeError('expected date (datetime) argument')
         req_url = 'http://api.mercadopublico.cl/servicios/v1/publico/'
-        if kwargs['is_licitacion']:
+        if is_licitacion:
             req_url += 'licitaciones.json'
         else:
             req_url += 'ordenesdecompra.json'
-        if kwargs['is_list']:
-            req_url += '?fecha={}'
-        else:
-            req_url += '?codigo={}'.format(kwargs['code'])
+        req_url += '?codigo={}'.format(code)
         req_url += '&ticket={}'.format(ticket)
         response = request_class_or_module.get(req_url).json()
         #TODO:improve retry method
         for _ in range(5):
             while 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
-        return cls.objects.get_or_create(kwargs,
-                                         request=req_url,
+        return cls.objects.get_or_create(is_licitacion=is_licitacion,
+                                         code=code,
                                          response=response)
 
     def __str__(self):
