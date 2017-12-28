@@ -12,11 +12,37 @@ ticket_b = cycle([
 max_retries = 5
 
 class APIList(models.Model):
-    date = models.DateTimeField()
+    date = models.DateField()
     is_licitacion = models.BooleanField()
     response = models.TextField()
     date_ini = models.DateTimeField(auto_now_add=True)
     date_fin = models.DateTimeField(default=timezone.now)
+
+    @classmethod
+    def create(cls, is_licitacion, date, request_class_or_module=requests):
+        """Creates a new APIList if the response changed
+
+        is_licitacion: licitacion or Orden de Compra
+        Accepts a request_class_or_module for mocking
+        """
+        req_url = 'http://api.mercadopublico.cl/servicios/v1/publico/'
+        if is_licitacion:
+            req_url += 'licitaciones.json'
+        else:
+            req_url += 'ordenesdecompra.json'
+        req_url += '?fecha={:%d%m%Y}'.format(date)
+        req_url += '&ticket={}'.format(ticket)
+        response = request_class_or_module.get(req_url).json()
+        #TODO:improve retry method
+        for _ in range(5):
+            while 'Codigo' in response:
+                response = request_class_or_module.get(req_url).json()
+        return cls.objects.get_or_create(is_licitacion=is_licitacion,
+                                         date=date,
+                                         response=response)
+
+    def __str__(self):
+        return('<APIList {!r}>'.format(vars(self)))
 
 class APIItem(models.Model):
     """Represents the json response from the API"""
@@ -50,22 +76,7 @@ class APIItem(models.Model):
                                          response=response)
 
     def __str__(self):
-        #for key, value in vars(self).items():
-            #if not key.startswith('_'):
-                #result += '{}={!r},'.format(key, value)
-        return('<APIResponse {!r}>'.format(vars(self)))
-       # try:
-       #     return cls.objects.get(*args, **kwargs)
-       # except cls.DoesNotExist:
-       #     new_object = cls()
-       #                'ordenesdecompra.json?codigo={c}&ticket={t}')
-       #     req_url = req_url.format(c=code, t=ticket)
-       #     response = request_class_or_module.get(req_url).json()
-       #     #print(response)
-       #     #TODO:improve retry method
-       #     for _ in range(5):
-       #         while 'Codigo' in response:
-       #             response = request_class_or_module.get(req_url).json()
+        return('<APIItem {!r}>'.format(vars(self)))
 
 class CompraPublica(models.Model):
     STATE_CODE_CHOICES = ((4, "Enviada a Proveedor"),
