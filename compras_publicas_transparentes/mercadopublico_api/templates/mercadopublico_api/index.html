@@ -1,6 +1,28 @@
+{% extends "compras_publicas_transparentes/base.html" %}
+
+{% block content %}
+    Fecha inicial: <input type="text" id="fecha_ini">
+    <div id="calendar_ini"></div>
+    <div id="result_list"></div>
+    <script>
+        $( function() {
+            $("#calendar_ini").datepicker({
+                altField: "#fecha_ini",
+                altFormat: "d/m/yy"
+                }).on("change", function() {
+                    console.log("get list for "+this.value)
+                    $.get("{% url 'mercadopublico_api:listempty' %}"+this.value,
+                        function(data) {
+                            $("#result_list").html(data)
+                        })
+                })
+        })
+    </script>
+{% endblock %}
+
+{% comment %}
 {% load static %}
 
-<link rel="stylesheet" type="text/css" href="{% static 'mercadopublico_api/style.css' %}"     />
 {% if object_list %}
     <ul>
     {% for cp in object_list %}
@@ -11,3 +33,4 @@
     <p>No hay compras públicas disponibles.</p>
 {% endif %}
 
+{% endcomment %}

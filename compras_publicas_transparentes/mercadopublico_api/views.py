@@ -1,18 +1,27 @@
 """Views for mercadopublico_api"""
 from django.shortcuts import render
 from django.views import generic
-from .models import CompraPublica
+from django.utils import timezone
+from .models import CompraPublica, APIList, APIItem
 
 class IndexView(generic.ListView):
     template_name = 'mercadopublico_api/index.html'
 
     def get_queryset(self):
         """Returnd the last five published CompraPublica."""
-        return CompraPublica.get_last_five()
+        return APIList.objects.all()[:5]
 
 def detail(request, code):
     cp = CompraPublica.create(code)
     return render(request, 'mercadopublico_api/detail.html', {'cp': cp})
+
+def list(request,
+         year=timezone.now().year,
+         month=timezone.now().month,
+         day=timezone.now().day):
+    cp = CompraPublica.objects.all()[0]
+    return render(request, 'mercadopublico_api/detail.html', {'cp': cp})
+
 #class IndexView(generic.ListView):
 #    template_name = 'mercadopulbico_api/index.html'
 #    context_object_name = 'latest_question_list'
