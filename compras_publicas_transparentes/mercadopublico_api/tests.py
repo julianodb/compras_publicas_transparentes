@@ -1,7 +1,8 @@
 """Unittest module for mercadopublico_api"""
 from django.test import TestCase
+from django.utils import timezone
 
-from .models import CompraPublica, APIResponse
+from .models import CompraPublica, APIItem, APIList
 
 from contextlib import contextmanager
 
@@ -179,130 +180,108 @@ class FakeResponseList():
                                         'ONALES')}]}
 
 
-class APIResponseModelTests(TestCase):
-    """APIResponse Model unit tests"""
+class APIItemModelTests(TestCase):
+    """APIItem Model unit tests"""
     def test_create_no_arguments(self):
-        """Trying to create APIResponse with no arguments raises error"""
+        """Trying to create APIItem with no arguments raises error"""
         with self.assertRaises(TypeError):
-            APIResponse.create()
-
-    def test_create_missing_is_list(self):
-        """Calling APIResponse.create without is_list raises error"""
-        with self.assertRaises(TypeError):
-            APIResponse.create(is_licitacion=True)
+            APIItem.create()
 
     def test_create_missing_is_licitacion(self):
-        """Calling APIResponse.create without is_licitacion raises error"""
+        """Calling APIItem.create without is_licitacion raises error"""
         with self.assertRaises(TypeError):
-            APIResponse.create(is_list=True)
+            APIItem.create(code='CODE')
 
     def test_create_missing_code(self):
-        """Calling APIResponse.create without code raises error"""
+        """Calling APIItem.create without code raises error"""
         with self.assertRaises(TypeError):
-            APIResponse.create(is_licitacion=True, is_list=False)
-
-    def test_create_missing_date(self):
-        """Calling APIResponse.create without date raises error"""
-        with self.assertRaises(TypeError):
-            APIResponse.create(is_licitacion=True, is_list=True)
+            APIItem.create(is_licitacion=True)
 
     def test_create_licitacion(self):
-        """APIResponse.create happy path for licitacion""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=True,
-                           is_list=False,
-                           code='CODE')
+        """APIItem.create happy path for licitacion""" 
+        code = 'CODE'
+        apiresp, n = APIItem.create(is_licitacion=True,
+                                    code=code,
+                                    request_class_or_module=FakeRequest)
         self.assertTrue(
             FakeRequest.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
                  "ciones.json?codigo=CODE")))
-        self.assertTrue(
-            apiresp.request.startswith( 
-                ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
-                 "ciones.json?codigo=CODE")))
         self.assertEquals(apiresp.response, FakeResponse().json())
+        self.assertEquals(apiresp.code, code)
         self.assertIs(apiresp.is_licitacion, True)
-        self.assertIs(apiresp.is_list, False)
 
     def test_create_licitacion_twice(self):
-        """APIResponse.create returns old object if response is the same""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=True,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, True)
-        apiresp2, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=True,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, False)
+        """APIItem.create returns old object if response is the same""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=True,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
+        apiresp2, new = APIItem.create(is_licitacion=True,
+                                       code=code,
+                                       request_class_or_module=FakeRequest)
+        self.assertIs(new, False)
         self.assertEquals(apiresp, apiresp2)
-        self.assertEquals(APIResponse.objects.count(), 1)
+        self.assertEquals(APIItem.objects.count(), 1)
 
     def test_create_licitacion_different(self):
-        """APIResponse.create returns new object if response is different""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=True,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, True)
+        """APIItem.create returns new object if response is different""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=True,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
         with FakeRequest.change_response():
-            apiresp2, n = APIResponse.create(
+            apiresp2, new = APIItem.create(
                 request_class_or_module=FakeRequest,
                 is_licitacion=True,
-                is_list=False,
-                code='CODE')
-            self.assertIs(n, True)
-            self.assertEquals(APIResponse.objects.count(), 2)
+                code=code)
+            self.assertIs(new, True)
+            self.assertEquals(APIItem.objects.count(), 2)
 
     def test_create_orden_compra(self):
-        """APIResponse.create happy path for orden_compra""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=False,
-                           is_list=False,
-                           code='CODE')
+        """APIItem.create happy path for orden_compra""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=False,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
         self.assertTrue(
             FakeRequest.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
                  "sdecompra.json?codigo=CODE")))
-        self.assertTrue(
-            apiresp.request.startswith( 
-                ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
-                 "sdecompra.json?codigo=CODE")))
+        self.assertEquals(apiresp.code, code)
         self.assertEquals(apiresp.response, FakeResponse().json())
         self.assertIs(apiresp.is_licitacion, False)
-        self.assertIs(apiresp.is_list, False)
 
     def test_create_orden_compra_equal(self):
-        """APIResponse.create returns old object if response is the same""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=False,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, True)
-        apiresp2, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=False,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, False)
+        """APIItem.create returns old object if response is the same""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=False,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
+        apiresp2, new = APIItem.create(is_licitacion=False,
+                                       code=code,
+                                       request_class_or_module=FakeRequest)
+        self.assertIs(new, False)
         self.assertEquals(apiresp, apiresp2)
-        self.assertEquals(APIResponse.objects.count(), 1)
+        self.assertEquals(APIItem.objects.count(), 1)
 
     def test_create_orden_compra_different(self):
-        """APIResponse.create returns new object if response is different""" 
-        apiresp, n = APIResponse.create(request_class_or_module=FakeRequest,
-                           is_licitacion=False,
-                           is_list=False,
-                           code='CODE')
-        self.assertIs(n, True)
+        """APIItem.create returns new object if response is different""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=False,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
         with FakeRequest.change_response():
-            apiresp2, n = APIResponse.create(
+            apiresp2, new = APIItem.create(
                 request_class_or_module=FakeRequest,
                 is_licitacion=False,
-                is_list=False,
-                code='CODE')
-            self.assertIs(n, True)
-            self.assertEquals(APIResponse.objects.count(), 2)
+                code=code)
+            self.assertIs(new, True)
+            self.assertEquals(APIItem.objects.count(), 2)
 
 
 class CompraPublicaModelTests(TestCase):
