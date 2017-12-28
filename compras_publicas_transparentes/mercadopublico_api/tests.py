@@ -143,9 +143,21 @@ class FakeRequestList():
     Implements the get() method, which returns a FakeResponseList object, 
     and has a json() method.
     """
+    alt_response=False
+    called_url = ''
     @classmethod
     def get(cls, url):
-        return FakeResponseList()
+        cls.called_url = url
+        return FakeResponseList(cls.alt_response)
+
+    @classmethod
+    @contextmanager
+    def change_response(cls):
+        cls.alt_response = True
+        try:
+            yield
+        finally:
+            cls.alt_response = False
 
 class FakeResponseList():
     """imitates requests.get() response for lists petitions
@@ -153,11 +165,16 @@ class FakeResponseList():
     Provides with a hard-coded example extracted from mercadopublico api
     when the request is estado=todos
     """
+    def __init__(self, change_response=False):
+        if change_response:
+            self.codigo_estado = 5
+        else:
+            self.codigo_estado = 4
     def json(self):
         return {'Cantidad': 6,
                 'Version': 'v1',
                 'FechaCreacion': '2017-12-21T00:37:06.397',
-                'Listado': [{'CodigoEstado': 4,
+                'Listado': [{'CodigoEstado': self.codigo_estado,
                              'Codigo': '1816-1026-CM17',
                              'Nombre': 'CARNES'},
                             {'CodigoEstado': 4,
@@ -179,6 +196,109 @@ class FakeResponseList():
                              'Nombre': ('HOSLA COMPRA DE SERVICIOS PROFESI'
                                         'ONALES')}]}
 
+
+class APIListModelTests(TestCase):
+    """APIList Model unit tests"""
+    def test_create_no_arguments(self):
+        """Trying to create APIList with no arguments raises error"""
+        with self.assertRaises(TypeError):
+            APIList.create()
+
+    def test_create_missing_is_licitacion(self):
+        """Calling APIList.create without is_licitacion raises error"""
+        with self.assertRaises(TypeError):
+            APIList.create(date=timezone.now().date())
+
+    def test_create_missing_date(self):
+        """Calling APIList.create without date raises error"""
+        with self.assertRaises(TypeError):
+            APIList.create(is_licitacion=True)
+
+    def test_create_licitacion(self):
+        """APIList.create happy path for licitacion""" 
+        date = timezone.now().date()
+        apiresp, n = APIList.create(is_licitacion=True,
+                                    date=date,
+                                    request_class_or_module=FakeRequestList)
+        self.assertTrue(
+            FakeRequestList.called_url.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
+                 "ciones.json?fecha={:%d%m%Y}".format(date))))
+        self.assertEquals(apiresp.response, FakeResponseList().json())
+        self.assertEquals(apiresp.date, date)
+        self.assertIs(apiresp.is_licitacion, True)
+
+    def test_create_licitacion_twice(self):
+        """APIList.create returns old object if response is the same""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=True,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        apiresp2, new = APIList.create(is_licitacion=True,
+                                       date=date,
+                                       request_class_or_module=FakeRequestList)
+        self.assertIs(new, False)
+        self.assertEquals(apiresp, apiresp2)
+        self.assertEquals(APIList.objects.count(), 1)
+
+    def test_create_licitacion_different(self):
+        """APIList.create returns new object if response is different""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=True,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        with FakeRequestList.change_response():
+            apiresp2, new = APIList.create(
+                request_class_or_module=FakeRequestList,
+                is_licitacion=True,
+                date=date)
+            self.assertIs(new, True)
+            self.assertEquals(APIList.objects.count(), 2)
+
+    def test_create_orden_compra(self):
+        """APIList.create happy path for orden_compra""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=False,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertTrue(
+            FakeRequestList.called_url.startswith( 
+                ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
+                 "sdecompra.json?fecha={:%d%m%Y}".format(date))))
+        self.assertEquals(apiresp.date, date)
+        self.assertEquals(apiresp.response, FakeResponseList().json())
+        self.assertIs(apiresp.is_licitacion, False)
+
+    def test_create_orden_compra_equal(self):
+        """APIList.create returns old object if response is the same""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=False,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        apiresp2, new = APIList.create(is_licitacion=False,
+                                       date=date,
+                                       request_class_or_module=FakeRequestList)
+        self.assertIs(new, False)
+        self.assertEquals(apiresp, apiresp2)
+        self.assertEquals(APIList.objects.count(), 1)
+
+    def test_create_orden_compra_different(self):
+        """APIList.create returns new object if response is different""" 
+        date = timezone.now()
+        apiresp, new = APIList.create(is_licitacion=False,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        with FakeRequestList.change_response():
+            apiresp2, new = APIList.create(
+                request_class_or_module=FakeRequestList,
+                is_licitacion=False,
+                date=date)
+            self.assertIs(new, True)
+            self.assertEquals(APIList.objects.count(), 2)
 
 class APIItemModelTests(TestCase):
     """APIItem Model unit tests"""
