@@ -2,6 +2,7 @@
 from django.shortcuts import render
 from django.views import generic
 from django.utils import timezone
+import datetime
 from .models import CompraPublica, APIList, APIItem
 
 class IndexView(generic.ListView):
@@ -11,6 +12,9 @@ class IndexView(generic.ListView):
         """Returnd the last five published CompraPublica."""
         return APIList.objects.all()[:5]
 
+def index(request):
+    return render(request, 'mercadopublico_api/index.html', {'total': APIList.objects.count()})
+
 def detail(request, code):
     cp = CompraPublica.create(code)
     return render(request, 'mercadopublico_api/detail.html', {'cp': cp})
@@ -19,8 +23,9 @@ def list(request,
          year=timezone.now().year,
          month=timezone.now().month,
          day=timezone.now().day):
-    cp = CompraPublica.objects.all()[0]
-    return render(request, 'mercadopublico_api/detail.html', {'cp': cp})
+    apilist, new = APIList.create(is_licitacion=False,
+                                  date=datetime.date(year,month,day))
+    return render(request, 'mercadopublico_api/list.html', {'list': apilist})
 
 #class IndexView(generic.ListView):
 #    template_name = 'mercadopulbico_api/index.html'
