@@ -83,8 +83,17 @@ class APIItem(models.Model):
         for _ in range(5):
             if 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
-        if 'Listado' in response:
-            response['Listado'].sort(key=lambda x: x['Codigo'])
+        if 'Listado' not in response:
+            return cls.objects.get_or_create(is_licitacion=is_licitacion,
+                                             code=code,
+                                             response=response)
+        response['Listado'].sort(key=lambda x: x['Codigo'])
+        for item in response['Listado']:
+            if 'Items' not in item:
+                continue
+            if 'Listado' not in item['Items']:
+                continue
+            item["Items"]["Listado"].sort(key=lambda x: x['Correlativo'])
         return cls.objects.get_or_create(is_licitacion=is_licitacion,
                                          code=code,
                                          response=response)
