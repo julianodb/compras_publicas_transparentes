@@ -64,8 +64,10 @@ class FakeResponse():
             response["Listado"][0]["CodigoEstado"] = 6
 
         if self.swap_response:
-            del response["Cantidad"]
-            response["Cantidad"] = 1
+            item = response["Listado"].pop(0)
+            response["Listado"].append(item)
+            item = response["Listado"][0]["Items"]["Listado"].pop()
+            response["Listado"][0]["Items"]["Listado"].append(item)
 
         return response
 
