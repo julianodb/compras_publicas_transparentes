@@ -38,7 +38,7 @@ class APIList(models.Model):
         response = request_class_or_module.get(req_url).json()
         #TODO:improve retry method
         for _ in range(5):
-            while 'Codigo' in response:
+            if 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
         obj, new = cls.objects.update_or_create(is_licitacion=is_licitacion,
                                                 date=date,
@@ -79,7 +79,7 @@ class APIItem(models.Model):
         response = request_class_or_module.get(req_url).json()
         #TODO:improve retry method
         for _ in range(5):
-            while 'Codigo' in response:
+            if 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
         return cls.objects.get_or_create(is_licitacion=is_licitacion,
                                          code=code,
