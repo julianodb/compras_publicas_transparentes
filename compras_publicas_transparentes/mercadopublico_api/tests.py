@@ -5,6 +5,10 @@ from django.utils import timezone
 from .models import CompraPublica, APIItem, APIList
 
 from contextlib import contextmanager
+import copy
+
+from .test_apiitem import test_apiitem
+from .test_apilist import test_apilist
 
 #TODO: handle when response is: {'Codigo': 10500,
  #'Mensaje': 'Lo sentimos. Hemos detectado que existen peticiones simultáneas.'}
@@ -15,12 +19,14 @@ class FakeRequest():
     Implements the get() method, which returns a FakeResponse object, and
     has a json() method.
     """
-    alt_response=False
+    alt_response = False
+    swapped_response = False
     called_url = ''
     @classmethod
     def get(cls, url):
         cls.called_url = url
-        return FakeResponse(cls.alt_response)
+        return FakeResponse(change_response=cls.alt_response,
+                            swap_response=cls.swapped_response)
 
     @classmethod
     @contextmanager
@@ -31,111 +37,37 @@ class FakeRequest():
         finally:
             cls.alt_response = False
 
+    @classmethod
+    @contextmanager
+    def swap_response(cls):
+        cls.swapped_response = True
+        try:
+            yield
+        finally:
+            cls.swapped_response = False
+
 class FakeResponse():
     """imitates requests.get() response for mocking
 
     Provides a hard-coded example extracted from mercadopublico api
     """
-    def __init__(self, change_response=False):
-        if change_response:
-            self.codigo_estado = 5
-        else:
-            self.codigo_estado = 6
+    def __init__(self, change_response=False, swap_response=False):
+        self.change_response = change_response
+        self.swap_response = swap_response
         
     def json(self):
-        return {
-            "Cantidad":1,
-            "FechaCreacion":"2017-12-20T13:22:22.64",
-            "Version":"v1",
-            "Listado":[{
-                "Codigo":"2097-241-SE14",
-                "Nombre":"Insumos dentales especialidades",
-                "CodigoEstado":self.codigo_estado,
-                "Estado":"Aceptada",
-                "CodigoLicitacion":"2097-165-L113",
-                "Descripcion": (
-                    "Insumos dentales especialidades DESDE 2097-165-L113\r"
-                    "\nDENTAL ESPECIALIDADES"),
-                "CodigoTipo":"8",
-                "Tipo":"SE",
-                "TipoMoneda":"CLP",
-                "CodigoEstadoProveedor":4,
-                "EstadoProveedor":"Aceptada",
-                "Fechas":{"FechaCreacion":"2014-01-30T09:00:01.96",
-                          "FechaEnvio":"2014-01-30T09:36:28",
-                          "FechaAceptacion":"2014-02-02T23:58:56.63",
-                          "FechaCancelacion":None,
-                          "FechaUltimaModificacion":"2014-01-30T09:11:00"},
-                "TieneItems":"1",
-                "PromedioCalificacion":3.9333333333333331,
-                "CantidadEvaluacion":6,
-                "Descuentos":0.0,
-                "Cargos":0.0,
-                "TotalNeto":35000.0,
-                "PorcentajeIva":19.0,
-                "Impuestos":6650.0,
-                "Total":41650.0,
-                "Financiamiento":"",
-                "Pais":"CL",
-                "TipoDespacho":"7",
-                "FormaPago":"2",
-                "Comprador":{
-                    "CodigoOrganismo":"7398",
-                    "NombreOrganismo":"Hospital Arauco",
-                    "RutUnidad":"61.602.209-1",
-                    "CodigoUnidad":"3092",
-                    "NombreUnidad":"Hospital Arauco",
-                    "Actividad":"",
-                    "DireccionUnidad":"Caupolican S/N",
-                    "ComunaUnidad":"Arauco",
-                    "RegionUnidad":"Región del Biobío ",
-                    "Pais":"CL",
-                    "NombreContacto":"Yohana Lidia Maldonado Medina",
-                    "CargoContacto":"Administrativo Abastecimiento",
-                    "FonoContacto":"56-41-2725940",
-                    "MailContacto":"maldonadoyohana1@gmail.com"},
-                "Proveedor":{
-                    "Codigo":"1316979",
-                    "Nombre":"COMERCIALIZADORA ILHABELLA EIRL",
-                    "Actividad":("VENTA AL POR MAYOR DE OTROS PRODUCTOS N"
-                                 ".C.P.| VENT"),
-                    "CodigoSucursal":"717107",
-                    "NombreSucursal":"COMERCIALIZADORA ILHABELLA EIRL",
-                    "RutSucursal":"76.242.192-5",
-                    "Direccion":"AV. PAUL HARRIS 1464",
-                    "Comuna":"Las Condes",
-                    "Region":"Región Metropolitana de Santiago",
-                    "Pais":"CL",
-                    "NombreContacto":"MARLENE BEATRIZ FLORES PATIÑO",
-                    "CargoContacto":"SANTIAGO",
-                    "FonoContacto":"56-2-2122966",
-                    "MailContacto":"marlenebeatrizflores@gmail.com"},
-                "Items":{
-                    "Cantidad":1,
-                    "Listado":[{
-                        "Correlativo":1,
-                        "CodigoCategoria":30201900,
-                        "Categoria":(
-                            "Artículos para estructuras,obras y construcci"
-                            "ones / Estructuras prefabricadas / Construcci"
-                            "ones médicas prefabricadas"),
-                        "CodigoProducto":30201903,
-                        "Producto":"Unidades dentales",
-                        "EspecificacionComprador":"Ultracal",
-                        "EspecificacionProveedor":(
-                            " Ultracal.ULTRADENT. PRODUCTO AMERICANO. JERI"
-                            "NGA 3 GRS. KIT X 4 UNIDADES.  FECHA DE VENCIM"
-                            "IENTO 2018. SE ADJUNTA CATALOGO DE PRODUCTO. "
-                            "INCLUY FLETE. DESPACHO 24 HRS. PUESTO EN BODE"
-                            "GAS DE HOSPITAL DE ARAUCO."),
-                        "Cantidad":1.0,
-                        "Unidad":None,
-                        "Moneda":"CLP",
-                        "PrecioNeto":35000.0,
-                        "TotalCargos":0.0,
-                        "TotalDescuentos":0.0,
-                        "TotalImpuestos":0.0,
-                        "Total":35000.0}]}}]}
+        response = copy.deepcopy(test_apiitem)
+
+        if self.change_response:
+            response["Listado"][0]["CodigoEstado"] = 5
+        else:
+            response["Listado"][0]["CodigoEstado"] = 6
+
+        if self.swap_response:
+            del response["Cantidad"]
+            response["Cantidad"] = 1
+
+        return response
 
 class FakeRequestList():
     """imitates requests module functionality for lists petitions
@@ -143,12 +75,15 @@ class FakeRequestList():
     Implements the get() method, which returns a FakeResponseList object, 
     and has a json() method.
     """
-    alt_response=False
+    alt_response = False
+    swapped_response = False
     called_url = ''
+
     @classmethod
     def get(cls, url):
         cls.called_url = url
-        return FakeResponseList(cls.alt_response)
+        return FakeResponseList(change_response=cls.alt_response,
+                                swap_response=cls.swapped_response)
 
     @classmethod
     @contextmanager
@@ -159,43 +94,38 @@ class FakeRequestList():
         finally:
             cls.alt_response = False
 
+    @classmethod
+    @contextmanager
+    def swap_response(cls):
+        cls.swapped_response = True
+        try:
+            yield
+        finally:
+            cls.swapped_response = False
+
 class FakeResponseList():
     """imitates requests.get() response for lists petitions
 
     Provides with a hard-coded example extracted from mercadopublico api
     when the request is estado=todos
     """
-    def __init__(self, change_response=False):
-        if change_response:
-            self.codigo_estado = 5
-        else:
-            self.codigo_estado = 4
+    def __init__(self, change_response=False, swap_response=False):
+        self.change_response = change_response
+        self.swap_response = swap_response
+        
     def json(self):
-        return {'Cantidad': 6,
-                'Version': 'v1',
-                'FechaCreacion': '2017-12-21T00:37:06.397',
-                'Listado': [{'CodigoEstado': self.codigo_estado,
-                             'Codigo': '1816-1026-CM17',
-                             'Nombre': 'CARNES'},
-                            {'CodigoEstado': 4,
-                             'Codigo': '1816-1028-CM17',
-                             'Nombre': 'CARNES'},
-                            {'CodigoEstado': 9,
-                             'Codigo': '3265-837-SE17',
-                             'Nombre': ('Adquisición de Cajas - Dirección '
-                                        'de Transito')},
-                            {'CodigoEstado': 5,
-                             'Codigo': '4686-1709-SE17',
-                             'Nombre': 'DESRATIZACION Y DESINFECCION'},
-                            {'CodigoEstado': 4,
-                             'Codigo': '5857-43-SE17',
-                             'Nombre': ('Servicio de impresión recetarios '
-                                        'Adultos mayores')},
-                            {'CodigoEstado': 6,
-                             'Codigo': '617807-7419-SE17',
-                             'Nombre': ('HOSLA COMPRA DE SERVICIOS PROFESI'
-                                        'ONALES')}]}
+        response = copy.deepcopy(test_apilist)
 
+        if self.change_response:
+            response["Listado"][0]["CodigoEstado"] = 5
+        else:
+            response["Listado"][0]["CodigoEstado"] = 4
+
+        if self.swap_response:
+            item = response["Listado"].pop(0)
+            response["Listado"].append(item)
+
+        return response
 
 class APIListModelTests(TestCase):
     """APIList Model unit tests"""
@@ -257,6 +187,21 @@ class APIListModelTests(TestCase):
             self.assertIs(new, True)
             self.assertEquals(APIList.objects.count(), 2)
 
+    def test_create_licitacion_swapped(self):
+        """APIList.create returns old object if response is swapped""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=True,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        with FakeRequestList.swap_response():
+            apiresp2, new = APIList.create(
+                request_class_or_module=FakeRequestList,
+                is_licitacion=True,
+                date=date)
+            self.assertIs(new, False)
+            self.assertEquals(APIList.objects.count(), 1)
+
     def test_create_orden_compra(self):
         """APIList.create happy path for orden_compra""" 
         date = timezone.now().date()
@@ -299,6 +244,21 @@ class APIListModelTests(TestCase):
                 date=date)
             self.assertIs(new, True)
             self.assertEquals(APIList.objects.count(), 2)
+
+    def test_create_ordem_compra_swapped(self):
+        """APIList.create returns old object if response is swapped""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=False,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        with FakeRequestList.swap_response():
+            apiresp2, new = APIList.create(
+                request_class_or_module=FakeRequestList,
+                is_licitacion=False,
+                date=date)
+            self.assertIs(new, False)
+            self.assertEquals(APIList.objects.count(), 1)
 
 class APIItemModelTests(TestCase):
     """APIItem Model unit tests"""
@@ -359,6 +319,21 @@ class APIItemModelTests(TestCase):
                 code=code)
             self.assertIs(new, True)
             self.assertEquals(APIItem.objects.count(), 2)
+
+    def test_create_licitacion_swapped(self):
+        """APIItem.create returns old object if response is swapped""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=True,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
+        with FakeRequest.swap_response():
+            apiresp2, new = APIItem.create(
+                request_class_or_module=FakeRequest,
+                is_licitacion=True,
+                code=code)
+            self.assertIs(new, False)
+            self.assertEquals(APIItem.objects.count(), 1)
 
     def test_create_orden_compra(self):
         """APIItem.create happy path for orden_compra""" 
