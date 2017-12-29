@@ -1,17 +1,29 @@
 {% extends "compras_publicas_transparentes/base.html" %}
 
 {% block content %}
-    Fecha inicial: <input type="text" id="fecha_ini">
+    <div>Número de dias registrados: {{ total }}</div>
+    <div>Fecha inicial: <input type="text" id="fecha_ini"></div>
     <div id="calendar_ini"></div>
     <div id="result_list"></div>
+
     <script>
         $( function() {
+            const dateFormat = "dd/mm/yy"
             $("#calendar_ini").datepicker({
                 altField: "#fecha_ini",
-                altFormat: "d/m/yy"
+                altFormat: dateFormat,
+                dateFormat: dateFormat,
                 }).on("change", function() {
-                    console.log("get list for "+this.value)
-                    $.get("{% url 'mercadopublico_api:listempty' %}"+this.value,
+                    console.log("get list for "+
+                                $.datepicker.parseDate(
+                                    dateFormat,this.value).getFullYear())
+                    $.get("{% url 'mercadopublico_api:listempty' %}"+
+                          $.datepicker.parseDate(dateFormat, this.value)
+                              .getFullYear()+'/'+
+                          ($.datepicker.parseDate(dateFormat, this.value)
+                              .getMonth()+1)+'/'+
+                          $.datepicker.parseDate(dateFormat, this.value)
+                              .getDate(),
                         function(data) {
                             $("#result_list").html(data)
                         })
