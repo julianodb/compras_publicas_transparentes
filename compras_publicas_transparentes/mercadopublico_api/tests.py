@@ -21,12 +21,14 @@ class FakeRequest():
     """
     alt_response = False
     swapped_response = False
+    changed_fecha = False
     called_url = ''
     @classmethod
     def get(cls, url):
         cls.called_url = url
         return FakeResponse(change_response=cls.alt_response,
-                            swap_response=cls.swapped_response)
+                            swap_response=cls.swapped_response,
+                            change_fecha=cls.changed_fecha)
 
     @classmethod
     @contextmanager
@@ -46,14 +48,27 @@ class FakeRequest():
         finally:
             cls.swapped_response = False
 
+    @classmethod
+    @contextmanager
+    def change_fecha(cls):
+        cls.changed_fecha = True
+        try:
+            yield
+        finally:
+            cls.changed_fecha = False
+
 class FakeResponse():
     """imitates requests.get() response for mocking
 
     Provides a hard-coded example extracted from mercadopublico api
     """
-    def __init__(self, change_response=False, swap_response=False):
+    def __init__(self, 
+                 change_response=False,
+                 swap_response=False,
+                 change_fecha=False):
         self.change_response = change_response
         self.swap_response = swap_response
+        self.change_fecha = change_fecha
         
     def json(self):
         response = copy.deepcopy(test_apiitem)
@@ -69,6 +84,9 @@ class FakeResponse():
             item = response["Listado"][0]["Items"]["Listado"].pop()
             response["Listado"][0]["Items"]["Listado"].append(item)
 
+        if self.change_fecha:
+            response["FechaCreacion"] = '1017-12-21T00:00:00.000'
+
         return response
 
 class FakeRequestList():
@@ -79,13 +97,15 @@ class FakeRequestList():
     """
     alt_response = False
     swapped_response = False
+    changed_fecha = False
     called_url = ''
 
     @classmethod
     def get(cls, url):
         cls.called_url = url
         return FakeResponseList(change_response=cls.alt_response,
-                                swap_response=cls.swapped_response)
+                                swap_response=cls.swapped_response,
+                                change_fecha=cls.changed_fecha)
 
     @classmethod
     @contextmanager
@@ -105,15 +125,28 @@ class FakeRequestList():
         finally:
             cls.swapped_response = False
 
+    @classmethod
+    @contextmanager
+    def change_fecha(cls):
+        cls.changed_fecha = True
+        try:
+            yield
+        finally:
+            cls.changed_fecha = False
+
 class FakeResponseList():
     """imitates requests.get() response for lists petitions
 
     Provides with a hard-coded example extracted from mercadopublico api
     when the request is estado=todos
     """
-    def __init__(self, change_response=False, swap_response=False):
+    def __init__(self, 
+                 change_response=False,
+                 swap_response=False,
+                 change_fecha=False):
         self.change_response = change_response
         self.swap_response = swap_response
+        self.change_fecha = change_fecha
         
     def json(self):
         response = copy.deepcopy(test_apilist)
@@ -126,6 +159,9 @@ class FakeResponseList():
         if self.swap_response:
             item = response["Listado"].pop(0)
             response["Listado"].append(item)
+
+        if self.change_fecha:
+            response["FechaCreacion"] = '1017-12-21T00:00:00.000'
 
         return response
 
@@ -262,6 +298,21 @@ class APIListModelTests(TestCase):
             self.assertIs(new, False)
             self.assertEquals(APIList.objects.count(), 1)
 
+    def test_create_different_fecha_creacion(self):
+        """APIList.create returns old object if only change is fecha crea""" 
+        date = timezone.now().date()
+        apiresp, new = APIList.create(is_licitacion=False,
+                                      date=date,
+                                      request_class_or_module=FakeRequestList)
+        self.assertIs(new, True)
+        with FakeRequestList.change_fecha():
+            apiresp2, new = APIList.create(
+                request_class_or_module=FakeRequestList,
+                is_licitacion=False,
+                date=date)
+            self.assertIs(new, False)
+            self.assertEquals(APIList.objects.count(), 1)
+
 class APIItemModelTests(TestCase):
     """APIItem Model unit tests"""
     def test_create_no_arguments(self):
@@ -379,6 +430,21 @@ class APIItemModelTests(TestCase):
                 code=code)
             self.assertIs(new, True)
             self.assertEquals(APIItem.objects.count(), 2)
+
+    def test_create_different_fecha_creacion(self):
+        """APIItem.create returns old object if only change is fecha crea""" 
+        code = 'CODE'
+        apiresp, new = APIItem.create(is_licitacion=False,
+                                      code=code,
+                                      request_class_or_module=FakeRequest)
+        self.assertIs(new, True)
+        with FakeRequest.change_fecha():
+            apiresp2, new = APIItem.create(
+                request_class_or_module=FakeRequest,
+                is_licitacion=False,
+                code=code)
+            self.assertIs(new, False)
+            self.assertEquals(APIItem.objects.count(), 1)
 
 
 class CompraPublicaModelTests(TestCase):
