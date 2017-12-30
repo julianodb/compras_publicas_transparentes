@@ -25,7 +25,9 @@ def list(request,
          day=timezone.now().day):
     apilist, new = APIList.create(is_licitacion=False,
                                   date=datetime.date(year,month,day))
-    return render(request, 'mercadopublico_api/list.html', {'list': apilist})
+    return render(request,
+                  'mercadopublico_api/list.html',
+                  {'list': apilist, 'new': new})
 
 #class IndexView(generic.ListView):
 #    template_name = 'mercadopulbico_api/index.html'
