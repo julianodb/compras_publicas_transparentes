@@ -192,7 +192,9 @@ class APIListModelTests(TestCase):
             FakeRequestList.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
                  "ciones.json?fecha={:%d%m%Y}".format(date))))
-        self.assertEquals(apiresp.response, FakeResponseList().json())
+        expected = FakeResponseList().json()
+        del expected['FechaCreacion']
+        self.assertEquals(apiresp.response, expected)
         self.assertEquals(apiresp.date, date)
         self.assertIs(apiresp.is_licitacion, True)
 
@@ -250,8 +252,10 @@ class APIListModelTests(TestCase):
             FakeRequestList.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
                  "sdecompra.json?fecha={:%d%m%Y}".format(date))))
+        expected = FakeResponseList().json()
+        del expected['FechaCreacion']
         self.assertEquals(apiresp.date, date)
-        self.assertEquals(apiresp.response, FakeResponseList().json())
+        self.assertEquals(apiresp.response, expected)
         self.assertIs(apiresp.is_licitacion, False)
 
     def test_create_orden_compra_equal(self):
@@ -340,7 +344,9 @@ class APIItemModelTests(TestCase):
             FakeRequest.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/licita"
                  "ciones.json?codigo=CODE")))
-        self.assertEquals(apiresp.response, FakeResponse().json())
+        expected = FakeResponse().json()
+        del expected['FechaCreacion']
+        self.assertEquals(apiresp.response, expected)
         self.assertEquals(apiresp.code, code)
         self.assertIs(apiresp.is_licitacion, True)
 
@@ -398,8 +404,10 @@ class APIItemModelTests(TestCase):
             FakeRequest.called_url.startswith( 
                 ("http://api.mercadopublico.cl/servicios/v1/publico/ordene"
                  "sdecompra.json?codigo=CODE")))
+        expected = FakeResponse().json()
+        del expected['FechaCreacion']
         self.assertEquals(apiresp.code, code)
-        self.assertEquals(apiresp.response, FakeResponse().json())
+        self.assertEquals(apiresp.response, expected)
         self.assertIs(apiresp.is_licitacion, False)
 
     def test_create_orden_compra_equal(self):
