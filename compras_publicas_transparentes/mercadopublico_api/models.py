@@ -40,6 +40,8 @@ class APIList(models.Model):
         for _ in range(5):
             if 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
+        if 'FechaCreacion' in response:
+            del response['FechaCreacion']
         if 'Listado' in response:
             response['Listado'].sort(key=lambda x: x['Codigo'])
         obj, new = cls.objects.update_or_create(is_licitacion=is_licitacion,
@@ -83,6 +85,8 @@ class APIItem(models.Model):
         for _ in range(5):
             if 'Codigo' in response:
                 response = request_class_or_module.get(req_url).json()
+        if 'FechaCreacion' in response:
+            del response['FechaCreacion'] 
         if 'Listado' not in response:
             return cls.objects.get_or_create(is_licitacion=is_licitacion,
                                              code=code,
